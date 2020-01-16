@@ -44,6 +44,8 @@ Compute empirical mean and covariance matrix of +/- 1 assignment vectors
 """
 function empirical_assignment_mean_cov(X, lambda, num_samples; balanced=false, treatment_probs=0.5*ones(size(X,1)))
 
+    @assert(num_samples > 1) # otherwise, we'll have dimension mismatch
+
     # sample all assignments, convert to +/- 1 vectors 
     n,d = size(X)
     assign_list = sample_gs_walk(X, lambda, treatment_probs=treatment_probs, balanced=balanced, num_samples=num_samples)

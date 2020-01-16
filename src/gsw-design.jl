@@ -20,7 +20,7 @@ A fast implementation for sampling from the Gram--Schmidt Walk Design.
 - `num_samples`: the number of sample assignments to draw 
 
 # Output 
-- `assignment_list`: the samples 0/1 assignment vectors, (num_samples,n) integer array
+- `assignment_list`: sampled 0/1 assignment vectors. Integer array of dimension (n) if `num_samples==1`, otherwise dimensions are (`num_samples`,n)
 """
 function sample_gs_walk(X, lambda; treatment_probs = 0.5*ones(size(X,1)), balanced=false, num_samples=1)
     """
@@ -65,6 +65,12 @@ function sample_gs_walk(X, lambda; treatment_probs = 0.5*ones(size(X,1)), balanc
             assignment_list[i,j] = (z[j] < 0) ? 0 : 1
         end
     end
+
+    # return a 1-dimensional array if only one sample
+    if num_samples == 1
+        assignment_list = reshape(assignment_list, n)
+    end
+
     return assignment_list
 end
 
