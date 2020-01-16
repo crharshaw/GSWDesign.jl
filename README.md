@@ -30,16 +30,18 @@ The function `sample_gs_walk` maintains a Cholesky factorization so the runtime 
 Moreover, a recursive implementation is used for more efficient memory allocation.
 
 Here is an example of how to use the function `sample_gs_walk`.
-  
-  # import the package
-  using GSWDesign
-  
-  # generate a random matrix of covariates
-  n = 20
-  d = 4
-  X = randn(n,d)
-  
-  # run the Gram--Schmidt walk
-  lambda = 0.5
-  assignment_list = sample_gs_walk(X, lambda, num_samples=5)
+
+```julia
+# import the package
+using GSWDesign
+
+# generate a random matrix of covariates
+n = 20
+d = 4
+X = randn(n,d)
+
+# run the Gram--Schmidt walk
+lambda = 0.5
+assignment_list = sample_gs_walk(X, lambda, num_samples=5)
+```
 
