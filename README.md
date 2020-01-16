@@ -1,5 +1,4 @@
 # GSWDesign.jl
-
 GSWDesign is a Julia package which contains a fast implementation of the Gram--Schmidt Walk 
 for balancing covariates in randomized experiments. 
 The Gram--Schmidt Walk design allows experimenters the flexibilty to control the amount of covariate balancing.
@@ -15,8 +14,7 @@ To install this package, you must first have installed the Julia programming lan
 If you have not done this, visit [julialang.org](https://julialang.org/) for instructions on how to do so.
 
 The best way to install this package is using Julia's builtin package manager, `Pkg`. 
-This package is currently unregistered and so the command for adding 
-it is slightly different than for registered packages.
+GSWDesign is currently an unregistered package and so the command for adding it is slightly different than for registered packages.
 We discuss how to do this for Julia versions v1.0 and higher.
 1. At the command line, type `julia` to enter an interactive Julia session.
 2. Enter the package manager by pressing `]`.
@@ -26,8 +24,22 @@ We discuss how to do this for Julia versions v1.0 and higher.
 Now GSWDesign is installed with your version of Julia and you can use it.
 
 ## How to use this package
-Once GSWDesign has been installed, you can load its functionality by including `using GSWDesign` or `import GSWDesign`
-in your julia files or interactive sessions.
+The main functionality of this package is the function `sample_gs_walk` which is a fast implementation to sample
+from the Gram--Schmidt Walk design. 
+The function `sample_gs_walk` maintains a Cholesky factorization so the runtime for producing one sample from the design scales like $O(n^2 d)$, where $n$ is the number of units and $d$ is the number of covariates for each unit.
+Moreover, a recursive implementation is used for more efficient memory allocation.
 
-
+Here is an example of how to use the function `sample_gs_walk`.
+  
+  # import the package
+  using GSWDesign
+  
+  # generate a random matrix of covariates
+  n = 20
+  d = 4
+  X = randn(n,d)
+  
+  # run the Gram--Schmidt walk
+  lambda = 0.5
+  assignment_list = sample_gs_walk(X, lambda, num_samples=5)
 
