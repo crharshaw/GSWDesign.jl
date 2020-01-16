@@ -49,5 +49,5 @@ The return variable `assignment_list` is an array of size `num_samples`-by-n wit
 The function `sample_gs_walk` has several other features, including the ability to set individual assignment probabilities and the option for strictly balanced assignments. 
 A complete description of these features is available by typing `?sample_gs_walk` in the interactive terminal.
 
-Please see our Jupyter notebooks in the `notebooks` directory for more example usage.
+For a more detailed walkthrough of how to use this package, please see the Jupyter notebook `walkthrough.ipynb` in the `notebooks` directory.
 
