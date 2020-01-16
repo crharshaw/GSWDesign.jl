@@ -4,7 +4,7 @@ for balancing covariates in randomized experiments.
 The Gram--Schmidt Walk design allows experimenters the flexibilty to control the amount of covariate balancing.
 See the references below for details of the Gram--Schmidt Walk design and its analysis.
 
-1. Christoher Harshaw, Fredrik Savje, Daniel Spielman, Peng Zhang. "Balancing covariates in randomized experiments
+1. Christopher Harshaw, Fredrik S&auml;vje, Daniel Spielman, Peng Zhang. "Balancing covariates in randomized experiments
 using the Gram–Schmidt walk". Arxiv 1911.03071, 2019. [arxiv](https://arxiv.org/abs/1911.03071)
 2. Nikhil Bansal, Daniel Dadush, Shashwat Garg, and Shachar Lovett. "The Gram–Schmidt walk: a
 cure for the Banaszczyk blues". In STOC, 2018. [arxiv](https://arxiv.org/abs/1708.01079)
