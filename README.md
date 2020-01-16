@@ -26,7 +26,7 @@ Now GSWDesign is installed with your version of Julia and you can use it.
 ## How to use this package
 The main functionality of this package is the function `sample_gs_walk` which is a fast implementation to sample
 from the Gram--Schmidt Walk design. 
-The function `sample_gs_walk` maintains a Cholesky factorization so the runtime for producing one sample from the design scales like $O(n^2 d)$, where $n$ is the number of units and $d$ is the number of covariates for each unit.
+The function `sample_gs_walk` maintains a Cholesky factorization so the runtime for producing one sample from the design scales like $O(n^2 d)$ for $n > d$, where $n$ is the number of units and $d$ is the number of covariates for each unit.
 Moreover, a recursive implementation is used for more efficient memory allocation.
 
 Here is an example of how to use the function `sample_gs_walk`.
@@ -44,4 +44,10 @@ X = randn(n,d)
 lambda = 0.5
 assignment_list = sample_gs_walk(X, lambda, num_samples=5)
 ```
+Note that covariate matrices are n-by-d, so the covariates vectors for each unit are the *rows* of the matrix $X$.
+The return variable `assignment_list` is an array of size `num_samples`-by-n with entries in 0 and 1.
+The function `sample_gs_walk` has several other features, including the ability to set individual assignment probabilities and the option for strictly balanced assignments. 
+A complete description of these features is available by typing `?sample_gs_walk` in the interactive terminal.
+
+Please see our Jupyter notebooks in the `notebooks` directory for more example usage.
 
