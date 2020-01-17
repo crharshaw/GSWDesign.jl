@@ -15,14 +15,14 @@ A fast implementation for sampling from the Gram--Schmidt Walk Design.
 # Arguments
 - `X`: an n by d matrix which has the covariate vectors x_1, x_2 ... x_n as rows
 - `lambda`: a design parameter in (0,1] which determines the level of covariate balance
-- `treatment_probs`: n length vector of treatment probabilities in [0,1] (default: all entries = 1/2)
 - `balanced`: set `true` to sample from balanced Gram--Schmidt Walk design. (default: `false`)
+- `treatment_probs`: a `Number` is interpreted as the marginal treatment probability for each unit. An `Array` is interpreted as array of marginal treatment probabilities.
 - `num_samples`: the number of sample assignments to draw 
 
 # Output 
-- `assignment_list`: sampled 0/1 assignment vectors. Integer array of dimension (n) if `num_samples==1`, otherwise dimensions are (`num_samples`,n)
+- `assignment_list`: sampled +/- 1 assignment vectors. Integer array of dimension (n) if `num_samples==1`, otherwise dimensions are (`num_samples`,n)
 """
-function sample_gs_walk(X, lambda; treatment_probs = 0.5*ones(size(X,1)), balanced=false, num_samples=1)
+function sample_gs_walk(X, lambda; balanced=false, treatment_probs = 0.5, num_samples=1)
     """
     # A fast implementation for sampling from the Gram-Schmidt Walk Design.
     # Maintains a cholesky factorization of (I + X * X^T ) for faster repeated linear system solves
@@ -39,6 +39,19 @@ function sample_gs_walk(X, lambda; treatment_probs = 0.5*ones(size(X,1)), balanc
         Xt ./= max_norm
     end
 
+    # FLAG: if balanced is true, then we need treatment_probs = 1/2
+    @assert( (!balanced) || (treatment_probs == 0.5) )
+
+    # transform treatment prob to means vector
+    if isa(treatment_probs, Number)
+        @assert( 0 < treatment_probs < 1.0)
+        z0 = (2.0 * treatment_probs) * ones(n) .- 1.0
+    else
+        @assert(all(0 .<= treatment_probs .<= 1.0))
+        @assert(length(treatment_probs) == n)
+        z0 = (2.0 * treatment_probs) .- 1.0
+    end
+
     # pre-processing: compute cholesky factorization of I + (1-a) X X^T
     M = (lambda / (1-lambda)) * I +  (Xt * Xt')
     MC = cholesky(M)
@@ -47,11 +60,8 @@ function sample_gs_walk(X, lambda; treatment_probs = 0.5*ones(size(X,1)), balanc
     if balanced 
         cov_sum = sum(Xt, dims=2)
     else
-        cov_sum = nothing 
+        cov_sum = nothing
     end
-
-    # transform treatment probabilities to means (starting position of walk)
-    z0 = (2.0 * treatment_probs) .- 1.0
 
     # sample the num_sample assignments
     assignment_list = zeros(Int64, num_samples, n)
@@ -60,9 +70,9 @@ function sample_gs_walk(X, lambda; treatment_probs = 0.5*ones(size(X,1)), balanc
         # run the recursive version of the walk 
         z = _gs_walk_recur(Xt, copy(MC), copy(z0), lambda, balanced, cov_sum)
 
-        # transform z from +/- 1 to an assignment vector in 0/1
+        # update assignment list
         for j=1:n
-            assignment_list[i,j] = (z[j] < 0) ? 0 : 1
+            assignment_list[i,j] = (z[j] < 0) ? -1 : 1
         end
     end
 

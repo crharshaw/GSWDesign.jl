@@ -3,28 +3,12 @@
 # January 2020
 #
 # Utilities for general designs, including
-#   1. format transforming 
-#   2. computing empirical mean and covariances
-#   3. brute force enumeration of Gram--Schmidt Walk Design distribution
+#   1. computing empirical mean and covariances
+#   2. building stacked matrix
 #
 # This code is meant to be internal to the package. Use at your own risk.
 
 using LinearAlgebra
-
-function convert_to_pm1(assign_list)
-
-    # convert to float (for computation later)
-    assign_list = convert(Array{Float64}, assign_list)
-
-    # change from 0/1 to +/- 1
-    num_samples, n = size(assign_list)
-    for i=1:num_samples
-        for j=1:n
-            assign_list[i,j] = (assign_list[i,j] > 0.5) ? 1.0 : -1.0
-        end
-    end
-    return assign_list
-end
 
 """
     empirical_assignment_mean_cov(X, lambda, num_samples...)
@@ -42,14 +26,14 @@ Compute empirical mean and covariance matrix of +/- 1 assignment vectors
 - `empirical_mean`: n length vector of empirical means of +/- 1 assignment vectors 
 - `empirical_cov`: n-by-n empirical covariance matrix of +/- 1 assignment vectors
 """
-function empirical_assignment_mean_cov(X, lambda, num_samples; balanced=false, treatment_probs=0.5*ones(size(X,1)))
+function empirical_assignment_mean_cov(X, lambda, num_samples; balanced=false, treatment_probs=0.5)
 
     @assert(num_samples > 1) # otherwise, we'll have dimension mismatch
-
-    # sample all assignments, convert to +/- 1 vectors 
     n,d = size(X)
-    assign_list = sample_gs_walk(X, lambda, treatment_probs=treatment_probs, balanced=balanced, num_samples=num_samples)
-    assign_list = convert_to_pm1(assign_list)
+
+    # sample all assignments, convert to float for processing
+    assign_list = sample_gs_walk(X, lambda, balanced=balanced, treatment_probs=treatment_probs, num_samples=num_samples)
+    assign_list = float(assign_list)
 
     # compute empirical mean & covariance
     empirical_mean = sum(assign_list, dims=1) / num_samples         # mean 
