@@ -51,3 +51,6 @@ A complete description of these features is available by typing `?sample_gs_walk
 
 For a more detailed walkthrough of how to use this package, please see the Jupyter notebook `walkthrough.ipynb` in the `notebooks` directory.
 
+## Related Packages
+We also developed an R wrapper for GSWDesign, which you can [find here](https://github.com/fsavje/gswdesign-R).
+

@@ -150,49 +150,7 @@ function _gs_walk_recur(X, MC, z, lambda, balanced, cov_sum)
         end
 
         # get the u vector (only defined on live no pivots) 
-        # this involves computing a vector a and also a vector b in the balanced case 
-
-        # Here is a description of the a, more clearly outlined in paper
-        #   a(0) = X_k X_k' * z_p                                   O(d^2) using factorization
-        #   a(1) = inv( lambda/(1-lambda) * I + X_k' * X_k ) * a(0)   O(d^2) using factorization 
-        #   a(2) = (1-lambda)/(lambda) [ a(1) - v_p]                  O(d)
-        #   a(3) = X_k * a(2)                                       O(nd) matrix-vector multiplication 
-
-        a = (MC.L * (MC.U * X[:,p])) - (lambda / (1-lambda)) * X[:,p] # a(0)
-        ldiv!(MC, a)                                                # a(1)
-
-        mult_val = (1 - lambda) / lambda                              # a(2), in place
-        for i=1:length(a)
-            a[i] = mult_val * (a[i] - X[i,p]) 
-        end
-        a = (X' * a)[live_not_pivot]                                # a(3)
-
-        if balanced 
-
-            # Here is a description of the b, more clearly outline in the paper 
-            #   b(0) = X_k' * 1                                         O(1) look-up (pre-computed)
-            #   b(1) = inv( lambda/(1-lambda) * I + X_k' * X_k ) * b(0)   O(d^2) using factorization 
-            #   b(2) = X_k * b(1)                                       O(nd) matrix-vector multiplication 
-            #   b(3) = (b(2) - 1) / (2 * lambda)                         O(n)
-
-            b = copy(cov_sum)               # b(0)
-            ldiv!(MC, b)                    # b(1) 
-            b = (X' * b)[live_not_pivot]    # b(2) 
-            
-            div_val = 2*lambda               # b(3), in place 
-            for i=1:length(b)
-                b[i] = (b[i] - 1) / div_val
-            end
-
-            # compute scaling constant 
-            scale = - (1 + sum(a)) / (sum(b))
-
-            # compute u 
-            u = a + (scale * b) 
-        else 
-            # u is a -- nothing to do, really
-            u = a
-        end
+        u = compute_step_direction(MC, X, lambda, p, live_not_pivot, balanced, cov_sum)
 
         # get the step size delta
         del_plus, del_minus = compute_step_sizes(z, u, live_not_pivot, p)
@@ -255,6 +213,68 @@ function sample_pivot(live_not_pivot, num_alive)
             end
         end
     end
+end
+
+function compute_step_direction(MC, X, lambda, p, live_not_pivot, balanced, cov_sum)
+    """
+    # compute_step_direction
+    # Efficiently compute step direction u for live not pivot variables using matrix factorizations.
+    #
+    # Input
+    #   MC          the relevant cholesky factorization
+    # 	X           an d by n matrix which has the covariate vectors x_1, x_2 ... x_n as columns
+    #   lambda      a real value in (0,1) specifying weight
+    #   p           pivot variable
+    #   balanced    set `true` for balanced step size
+    #   cov_sum     
+    #
+    # Output 
+    #   u           the step direction only defined on live not pivot variables i.e. length(u) == sum(live_not_pivot)
+    """
+
+    # Here is a description of the a, more clearly outlined in paper
+    #   a(0) = X_k X_k' * z_p                                       O(d^2) using factorization
+    #   a(1) = inv( lambda/(1-lambda) * I + X_k' * X_k ) * a(0)     O(d^2) using factorization 
+    #   a(2) = (1-lambda)/(lambda) [ a(1) - v_p]                    O(d)
+    #   a(3) = X_k * a(2)                                           O(nd) matrix-vector multiplication 
+
+    a = (MC.L * (MC.U * X[:,p])) - (lambda / (1-lambda)) * X[:,p]   # a(0)
+    ldiv!(MC, a)                                                    # a(1)
+
+    mult_val = (1 - lambda) / lambda                                # a(2), in place
+    for i=1:length(a)
+        a[i] = mult_val * (a[i] - X[i,p]) 
+    end
+    a = (X' * a)[live_not_pivot]                                    # a(3)
+
+    if balanced 
+
+        # Here is a description of the b, more clearly outline in the paper 
+        #   b(0) = X_k' * 1                                             O(1) look-up (pre-computed)
+        #   b(1) = inv( lambda/(1-lambda) * I + X_k' * X_k ) * b(0)     O(d^2) using factorization 
+        #   b(2) = X_k * b(1)                                           O(nd) matrix-vector multiplication 
+        #   b(3) = (b(2) - 1) / (2 * lambda)                            O(n)
+
+        b = copy(cov_sum)               # b(0)
+        ldiv!(MC, b)                    # b(1) 
+        b = (X' * b)[live_not_pivot]    # b(2) 
+        
+        div_val = 2*lambda              # b(3), in place 
+        for i=1:length(b)
+            b[i] = (b[i] - 1) / div_val
+        end
+
+        # compute scaling constant 
+        scale = - (1 + sum(a)) / (sum(b))
+
+        # compute u 
+        u = a + (scale * b) 
+    else 
+        # u is a -- nothing to do, really
+        u = a
+    end
+
+    return u
 end
 
 function compute_step_sizes(z, u, live_not_pivot, p)
