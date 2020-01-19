@@ -38,10 +38,7 @@ function sample_gs_walk(X, lambda; balanced=false, treatment_probs = 0.5, num_sa
     if max_norm > eps()
         Xt ./= max_norm
     end
-
-    # FLAG: if balanced is true, then we need treatment_probs = 1/2
-    @assert( (!balanced) || (treatment_probs == 0.5) )
-
+    
     # transform treatment prob to means vector
     if isa(treatment_probs, Number)
         @assert( 0 < treatment_probs < 1.0)

@@ -1,5 +1,6 @@
 using Test
 using LinearAlgebra
+using Random
 using GSWDesign
 
 # run unit tests
