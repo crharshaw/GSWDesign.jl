@@ -46,24 +46,50 @@ maxnorm = maximum([norm(X[:,i]) for i=1:n])
 X /= maxnorm
 M = (lambda / (1-lambda)) * I +  (X * X')
 MC = cholesky(M)
+cov_sum = sum(X, dims=2)
 
 # Set Up at itereation 3: live_not_pivot lists and factorizations should be updated.
 p = 3
 live_not_pivot = vcat(falses(3), trues(n-3))
-lowrankdowndate!(MC, X[:,1])                   
-lowrankdowndate!(MC, X[:,2])
-lowrankdowndate!(MC, X[:,3])
+lowrankdowndate!(MC, X[:,1]); cov_sum -= X[:,1]                 
+lowrankdowndate!(MC, X[:,2]); cov_sum -= X[:,2]  
+lowrankdowndate!(MC, X[:,3]); cov_sum -= X[:,3]  
 
-# our code computes the following
-u = compute_step_direction(MC, X, lambda, p, live_not_pivot, balanced, cov_sum)
-
-# first, check that the length of u is corect, only defined on live not pivot vectors
-@test (length(u) == n-3)
-
-# next, obtain the stacked matrix and run (slower but equiv) linear system solve.
+# get the necessary variables for the larger (slower) linear system solve 
 B = build_stacked_matrix(X', lambda)
 Bp = B[:,live_not_pivot]
-true_u = - inv(Bp' * Bp) * (Bp' * B[:,p])
+bp = B[:,p]
+
+# First: the usual GSW setting
+u = compute_step_direction(MC, X, lambda, p, live_not_pivot, false, nothing)
+true_u = - inv(Bp' * Bp) * (Bp' * bp)
+
+# test length of u is corect, only defined on live not pivot vectors
+@test (length(u) == n-3)
+@test norm(u - true_u) <= 1e-2
+
+# Second: the balanced GSW setting 
+u = compute_step_direction(MC, X, lambda, p, live_not_pivot, true, cov_sum)
+
+# construct system to solve in balanced case
+k = sum(live_not_pivot)
+        
+# construct coefficient matrix
+A = zeros(k+1, k+1)
+A[1:k, 1:k] = Bp' * Bp
+A[1:k,k+1] = ones(k)/2
+A[k+1,1:k] = ones(k)
+
+# construct rhs coefficient vector 
+b = zeros(k+1)
+b[1:k] = - Bp' * bp
+b[k+1] = - 1
+
+# solve the system 
+y = pinv(A)*b
+true_u = y[1:k]
+
+@test (length(u) == n-3)
 @test norm(u - true_u) <= 1e-2
 
 #==============================
