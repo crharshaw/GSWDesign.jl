@@ -55,16 +55,6 @@ function matches_known_design_cov(rseed, n, balanced, num_samples, tol; verbose=
     # print statements if verbose 
     if verbose 
         println("Macro Test: GSW assignment covariance matches known design")
-        # println("\tn = ", n)
-        # println("\tbalanced = ", balanced)
-        # println("\t# of samples = ", num_samples)
-        # println("\ttolerance = ", tol)
-        # println("\nNorm Error: ", norm_err)
-        # if test_pass
-        #     println("Test passed")
-        # else
-        #     println("Test failed")
-        # end
     end
 
     return test_pass, empirical_cov, exact_cov
@@ -118,16 +108,6 @@ function matches_enumerated_design_cov(rseed, X, lambda, balanced, num_samples, 
     # print statements if verbose 
     if verbose 
         println("Macro Test: GSW assignment covariance matches brute-force computed covariance")
-        # println("\tn = ", n, "\td = ", d)
-        # println("\tbalanced = ", balanced)
-        # println("\t# of samples = ", num_samples)
-        # println("\ttolerance = ", tol)
-        # println("\nNorm Error: ", norm_err)
-        # if test_pass
-        #     println("Test passed")
-        # else
-        #     println("Test failed")
-        # end
     end
 
     return test_pass, empirical_cov, exact_cov
@@ -179,16 +159,6 @@ function correct_treatment_probabilities(rseed, treatment_probs, X, lambda, bala
     # print statements if verbose 
     if verbose 
         println("Macro Test: GSW produces the right marginal assignment probabilities")
-        # println("\tn = ", n, "\td = ", d)
-        # println("\tbalanced = ", balanced)
-        # println("\t# of samples = ", num_samples)
-        # println("\ttolerance = ", tol)
-        # println("\nMaximum Error: ", maximum(mean_err))
-        # if test_pass
-        #     println("Test passed")
-        # else
-        #     println("Test failed")
-        # end
     end
 
     return test_pass, empirical_probs
@@ -242,15 +212,6 @@ function test_cov_bound(rseed, X, lambda, num_samples, tol; verbose=false)
     # print statements if verbose 
     if verbose 
         println("Macro Test: GSW assignment covariance satisfies proven upper bound")
-        # println("\tn = ", n, "\td = ", d)
-        # println("\t# of samples = ", num_samples)
-        # println("\ttolerance = ", tol)
-        # println("\nBound Error: ", bound_err)
-        # if test_pass
-        #     println("Test passed")
-        # else
-        #     println("Test failed")
-        # end
     end
 
     return test_pass, empirical_cov, cov_ub
