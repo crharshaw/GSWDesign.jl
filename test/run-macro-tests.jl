@@ -1,6 +1,3 @@
-# set verbose to be true for these experiments
-verbose = true
-
 # Macro Test 1: recovering Bernoulli design
 n = 10
 tol = 0.1

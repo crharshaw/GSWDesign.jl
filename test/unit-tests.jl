@@ -14,6 +14,9 @@ Random.seed!(1234)
 # Unit Test 1:
 # Check step size calculation.
 ===============================#
+if verbose 
+    println("Unit Test: step size calculation")
+end
 
 # To make it harder, use a u has near-zero values 
 p = 5                           # 5 is pivot vector
@@ -32,6 +35,9 @@ del_plus, del_minus = compute_step_sizes(z, u, live_not_pivot, p)
 # Unit Test 2:
 # Check step direction computation
 ==================================#
+if verbose 
+    println("Unit Test: step direction calculation")
+end
 
 # initial set up
 n = 10
@@ -96,6 +102,9 @@ true_u = y[1:k]
 # Unit Test 3:
 # Run Gram Schmidt Walk once
 ===============================#
+if verbose 
+    println("Unit Test: run GSW")
+end
 
 d = 10
 n = 50

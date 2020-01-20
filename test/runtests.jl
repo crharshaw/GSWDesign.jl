@@ -3,6 +3,9 @@ using LinearAlgebra
 using Random
 using GSWDesign
 
+# set this to see print messages when running tests
+verbose=true
+
 # run unit tests
 include("unit-tests.jl")
 
