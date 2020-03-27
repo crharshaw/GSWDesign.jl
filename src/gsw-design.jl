@@ -8,7 +8,7 @@
 using LinearAlgebra
 
 """
-    sample_gs_walk(X::Array{AbstractFloat,2}, lambda::AbstractFloat, num_samples::Integer...)
+    sample_gs_walk(X::Array{AbstractFloat,2}, lambda::AbstractFloat, [num_samples::Integer] ...)
 
 Sample assignment vectors from the Gram--Schmidt Walk Design. 
 
