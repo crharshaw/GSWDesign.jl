@@ -33,6 +33,8 @@ function sample_gs_walk(
     num_samples=1
 )
 
+    @assert 0.0 <= lambda <= 1.0
+
     # transpose the covariate matrix so it has covariates as columns (this is a quick fix)
     X = copy(X')
 
@@ -53,9 +55,13 @@ function sample_gs_walk(
         z0 = (2.0 * treatment_probs) .- 1.0
     end
 
-    # pre-processing: compute cholesky factorization of I + (1-a) X X^T
-    M = (lambda / (1-lambda)) * I +  (X * X')
-    MC = cholesky(M)
+    # pre-processing: compute cholesky factorization of (lambda / (1 - lambda) * I + X*X')
+    # M = ( (lambda / (1.0-lambda)) * Matrix{Float64}(I, d, d) + X*X')
+    # MC = cholesky(M) 
+    MC = cholesky( (lambda / (1.0-lambda)) * Matrix{Float64}(I, d, d) )
+    for i=1:n 
+        lowrankupdate!(MC, X[:,i])
+    end
 
     # compute sum of covariances if necessary 
     if balanced 
