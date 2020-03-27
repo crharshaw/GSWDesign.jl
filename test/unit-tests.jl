@@ -113,3 +113,7 @@ for i=1:n
     X[i,:] /= norm(X[i,:])
 end
 assign_list = sample_gs_walk(X, 0.5, 200)
+
+# check the overloading -- returns only a bitstring when no number of samples is given
+assignment = sample_gs_walk(X, 0.5)
+@test typeof(assignment) == BitArray{1}
