@@ -62,7 +62,7 @@ lowrankdowndate!(MC, X[:,2]); cov_sum -= X[:,2]
 lowrankdowndate!(MC, X[:,3]); cov_sum -= X[:,3]  
 
 # get the necessary variables for the larger (slower) linear system solve 
-B = build_stacked_matrix(X', lambda)
+B = build_stacked_matrix(copy(X'), lambda)
 Bp = B[:,live_not_pivot]
 bp = B[:,p]
 
@@ -112,4 +112,4 @@ X = randn(n,d)
 for i=1:n
     X[i,:] /= norm(X[i,:])
 end
-assign_list = sample_gs_walk(X, 0.5, num_samples=200)
+assign_list = sample_gs_walk(X, 0.5, 200)

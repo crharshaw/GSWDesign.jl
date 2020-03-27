@@ -8,7 +8,7 @@
 using LinearAlgebra
 
 """
-    sample_gs_walk(X::Array{AbstractFloat,2}, lambda::AbstractFloat ...)
+    sample_gs_walk(X::Array{AbstractFloat,2}, lambda::AbstractFloat, num_samples::Integer...)
 
 Sample assignment vectors from the Gram--Schmidt Walk Design. 
 
@@ -18,19 +18,19 @@ system solves and has a recursive component for more effective memory allocation
 # Arguments
 - `X`: an n by d matrix which has the covariate vectors x_1, x_2 ... x_n as rows
 - `lambda`: a design parameter in (0,1] which determines the level of covariate balance
+- `num_samples`: the number of sample assignments to draw 
 - `balanced`: set `true` to sample from balanced Gram--Schmidt Walk design. (default: `false`)
 - `treatment_probs`: a `Number` is interpreted as the marginal treatment probability for each unit. An `Array` is interpreted as array of marginal treatment probabilities.
-- `num_samples`: the number of sample assignments to draw 
 
 # Output 
-- `assignment_list`: sampled +/- 1 assignment vectors. Integer array of dimension (n) if `num_samples==1`, otherwise dimensions are (`num_samples`,n)
+- `assignment_list`: an array of assignments, which are bitstrings of length n where `true` denotes treatment and `false` denotes no treatment
 """
 function sample_gs_walk(
     X::Array{<:AbstractFloat,2}, 
-    lambda::AbstractFloat; 
+    lambda::AbstractFloat,
+    num_samples::Integer;
     balanced=false, 
-    treatment_probs = 0.5, 
-    num_samples=1
+    treatment_probs = 0.5
 )
 
     @assert 0.0 <= lambda <= 1.0
@@ -56,8 +56,7 @@ function sample_gs_walk(
     end
 
     # pre-processing: compute cholesky factorization of (lambda / (1 - lambda) * I + X*X')
-    # M = ( (lambda / (1.0-lambda)) * Matrix{Float64}(I, d, d) + X*X')
-    # MC = cholesky(M) 
+    # MC = cholesky( (lambda / (1.0-lambda)) * Matrix{Float64}(I, d, d) + X*X')
     MC = cholesky( (lambda / (1.0-lambda)) * Matrix{Float64}(I, d, d) )
     for i=1:n 
         lowrankupdate!(MC, X[:,i])
@@ -71,25 +70,17 @@ function sample_gs_walk(
     end
 
     # sample the num_sample assignments
-    assignment_list = zeros(Int64, num_samples, n)
+    assignment_list = fill(BitArray{1}(undef, n), num_samples)
     for i=1:num_samples
-
-        # run the recursive version of the walk 
         z = _gs_walk_recur(X, copy(MC), copy(z0), lambda, balanced, cov_sum)
-
-        # update assignment list
-        for j=1:n
-            assignment_list[i,j] = (z[j] < 0) ? -1 : 1
-        end
-    end
-
-    # return a 1-dimensional array if only one sample
-    if num_samples == 1
-        assignment_list = reshape(assignment_list, n)
+        assignment_list[i] = z .> 0.0 
     end
 
     return assignment_list
 end
+
+sample_gs_walk(X::Array{<:AbstractFloat,2}, lambda::AbstractFloat; balanced=false, treatment_probs = 0.5) = sample_gs_walk(X, lambda, 1; balanced=balanced, treatment_probs=treatment_probs)[1]
+
 
 """
     _gs_walk_recur
