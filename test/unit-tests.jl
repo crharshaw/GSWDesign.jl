@@ -20,7 +20,7 @@ end
 
 # To make it harder, use a u has near-zero values 
 p = 5                           # 5 is pivot vector
-u = [1.0 2.0 0.0 -eps() -3.0]   # last 5 alive not pivot
+u = [1.0, 2.0, 0.0, -eps(), -3.0]   # last 5 alive not pivot
 z = vcat(ones(4), zeros(6))     # ten total variables
 live_not_pivot = vcat(falses(5), trues(5))
 

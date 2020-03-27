@@ -8,9 +8,12 @@
 using LinearAlgebra
 
 """
-    sample_gs_walk(X, lambda...)
+    sample_gs_walk(X::Array{AbstractFloat,2}, lambda::AbstractFloat ...)
 
-A fast implementation for sampling from the Gram--Schmidt Walk Design.
+Sample assignment vectors from the Gram--Schmidt Walk Design. 
+
+A fast implementation which maintains a cholesky factorization of (I + X * X^T ) for faster repeated linear 
+system solves and has a recursive component for more effective memory allocation.
 
 # Arguments
 - `X`: an n by d matrix which has the covariate vectors x_1, x_2 ... x_n as rows
@@ -22,21 +25,22 @@ A fast implementation for sampling from the Gram--Schmidt Walk Design.
 # Output 
 - `assignment_list`: sampled +/- 1 assignment vectors. Integer array of dimension (n) if `num_samples==1`, otherwise dimensions are (`num_samples`,n)
 """
-function sample_gs_walk(X, lambda; balanced=false, treatment_probs = 0.5, num_samples=1)
-    """
-    # A fast implementation for sampling from the Gram-Schmidt Walk Design.
-    # Maintains a cholesky factorization of (I + X * X^T ) for faster repeated linear system solves
-    # and has a recursive component for more effective memory allocation.
-    """
+function sample_gs_walk(
+    X::Array{<:AbstractFloat,2}, 
+    lambda::AbstractFloat; 
+    balanced=false, 
+    treatment_probs = 0.5, 
+    num_samples=1
+)
 
     # transpose the covariate matrix so it has covariates as columns (this is a quick fix)
-    Xt = X'
+    X = copy(X')
 
     # get the dimensions, re-scale so covariate norm is equal to 1
-    d, n = size(Xt)
-    max_norm = maximum([norm(Xt[:,i]) for i=1:n])
+    d, n = size(X)
+    max_norm = maximum([norm(X[:,i]) for i=1:n])
     if max_norm > eps()
-        Xt ./= max_norm
+        X ./= max_norm
     end
     
     # transform treatment prob to means vector
@@ -50,12 +54,12 @@ function sample_gs_walk(X, lambda; balanced=false, treatment_probs = 0.5, num_sa
     end
 
     # pre-processing: compute cholesky factorization of I + (1-a) X X^T
-    M = (lambda / (1-lambda)) * I +  (Xt * Xt')
+    M = (lambda / (1-lambda)) * I +  (X * X')
     MC = cholesky(M)
 
     # compute sum of covariances if necessary 
     if balanced 
-        cov_sum = sum(Xt, dims=2)
+        cov_sum = sum(X, dims=2)
     else
         cov_sum = nothing
     end
@@ -65,7 +69,7 @@ function sample_gs_walk(X, lambda; balanced=false, treatment_probs = 0.5, num_sa
     for i=1:num_samples
 
         # run the recursive version of the walk 
-        z = _gs_walk_recur(Xt, copy(MC), copy(z0), lambda, balanced, cov_sum)
+        z = _gs_walk_recur(X, copy(MC), copy(z0), lambda, balanced, cov_sum)
 
         # update assignment list
         for j=1:n
@@ -81,23 +85,32 @@ function sample_gs_walk(X, lambda; balanced=false, treatment_probs = 0.5, num_sa
     return assignment_list
 end
 
-function _gs_walk_recur(X, MC, z, lambda, balanced, cov_sum)
-    """
-    # _gs_walk_recur
-    # Carries out the iterative procedure of the Gram--Schmidt walk.
-    # This function recusively cals itself after sufficiently many variables have been frozen to achieve
-    # better memory allocation. The cholesky factorization of (I + X * X^T ) is also maintained.
-    #
-    # Input
-    # 	X           an d by n matrix which has the covariate vectors x_1, x_2 ... x_n as columns
-    #   MC          the relevant cholesky factorization
-    #   z           the starting point of the walk. This value is modified in place.
-    #   lambda           a real value in (0,1) specifying weight
-    #   balanced        set `true` to run the balanced GSW; otherwise, leave false 
-    #
-    # Output
-    #   z               the random +/- 1 vector, length n array
-    """
+"""
+    _gs_walk_recur
+
+Run the iterative procedure of the Gram--Schmidt Walk.
+
+This function recusively cals itself after sufficiently many variables have been frozen to achieve
+better memory allocation. The cholesky factorization of (I + X * X^T ) is also maintained.
+
+# Arguments
+- `X`: an d by n matrix which has the alive covariate vectors x_1, x_2 ... x_n as columns
+- `MC`: the relevant cholesky factorization 
+- `z`: vector of fractional assignments 
+- `lambda`: the design parameter, a real value in (0,1)
+- `balanced`: (optional) bool, set `true` to run the balanced GSW. Default value is `false`
+- `cov_sum`: (optional) length d vector, sum of the current alive covariates 
+
+# Output
+- `z`: the random +/- 1 vector, length n array of Float
+"""
+function _gs_walk_recur(
+    X::Array{<:AbstractFloat,2}, 
+    MC::Cholesky,
+    z::Array{<:AbstractFloat,1}, 
+    lambda::AbstractFloat, 
+    balanced::Bool, 
+    cov_sum)
 
     # get the dimensions, set tolerance
     d, n = size(X)
@@ -188,19 +201,22 @@ function _gs_walk_recur(X, MC, z, lambda, balanced, cov_sum)
     return z
 end
 
-function sample_pivot(live_not_pivot, num_alive)
-    """
-    # sample_pivot
-    # A fast impelmentation for uniformly sampling a pivot from the set of alive variables.
-    # Note that this is only meant to be called when a pivot is frozen, so live_not_pivot == live
-    #
-    # Input
-    #   live_not_pivot  n length bit array where a `true` entry means the variable is alive and not pivot
-    #   num_alive       integer, the number of alive variables
-    #
-    # Output 
-    #   p               the randomly chosen pivot
-    """
+"""
+    sample_pivot(live_not_pivot::BitArray{1}, num_alive::Integer)
+
+Uniformly sample a pivot from the set of alive variables.
+
+Note that this is only meant to be called when a pivot is frozen, so live_not_pivot == live
+
+# Arguments
+- `live_not_pivot`:  n length BitArray where a `true` entry means the variable is alive and not pivot
+- `num_alive`: the number of alive variables, Integer
+
+# Output 
+- `p`: the randomly chosen pivot
+"""
+function sample_pivot(live_not_pivot::BitArray{1}, num_alive::Integer)
+
     ind = rand(1:num_alive)
     for p=1:length(live_not_pivot)
         if live_not_pivot[p]
@@ -212,22 +228,31 @@ function sample_pivot(live_not_pivot, num_alive)
     end
 end
 
-function compute_step_direction(MC, X, lambda, p, live_not_pivot, balanced, cov_sum)
-    """
-    # compute_step_direction
-    # Efficiently compute step direction u for live not pivot variables using matrix factorizations.
-    #
-    # Input
-    #   MC          the relevant cholesky factorization
-    # 	X           an d by n matrix which has the covariate vectors x_1, x_2 ... x_n as columns
-    #   lambda      a real value in (0,1) specifying weight
-    #   p           pivot variable
-    #   balanced    set `true` for balanced step size
-    #   cov_sum     
-    #
-    # Output 
-    #   u           the step direction only defined on live not pivot variables i.e. length(u) == sum(live_not_pivot)
-    """
+"""
+    compute_step_direction
+
+Efficiently compute step direction `u` for live not pivot variables using matrix factorizations.
+
+# Arguments
+- `MC`: the relevant cholesky factorization
+- `X`: an d by n matrix which has the covariate vectors x_1, x_2 ... x_n as columns
+- `lambda`: the design parameter, a real value in (0,1)
+- `p`: pivot variable, Integer
+- `balanced`: Bool, set `true` to run the balanced GSW and `false` for typical GSW
+- `cov_sum`: if `balanced = true` then `cov_sum` must be length d vector, sum of the current alive covariates 
+
+# Output 
+- `u`           the step direction only defined on live not pivot variables i.e. length(u) == sum(live_not_pivot)
+"""
+function compute_step_direction(
+    MC::Cholesky, 
+    X::Array{<:AbstractFloat,2}, 
+    lambda::AbstractFloat, 
+    p::Integer, 
+    live_not_pivot::BitArray{1}, 
+    balanced::Bool, 
+    cov_sum
+)
 
     # Here is a description of the a, more clearly outlined in paper
     #   a(0) = X_k X_k' * z_p                                       O(d^2) using factorization
@@ -274,21 +299,23 @@ function compute_step_direction(MC, X, lambda, p, live_not_pivot, balanced, cov_
     return u
 end
 
-function compute_step_sizes(z, u, live_not_pivot, p)
-    """
-    # compute_step_sizes
-    # Compute the positive and negative step sizes, without unecessary allocations & calculations.
-    #
-    # Input
-    # 	z               n vector in [-1,1]
-    #   u               m vector where m = # of non-pivot alive variables
-    #   live_not_pivot  n length bit array where a `true` entry means the variable is alive and not pivot
-    #   p               integer, pivot variable
-    #
-    # Output
-    #   del_plus    the positive step size
-    #   del_minus   the negative step size
-    """
+
+"""
+    compute_step_sizes
+
+Compute the positive and negative step sizes, without unecessary allocations & calculations.
+
+# Arguments
+- `z`: n vector in [-1,1]
+- `u`: m vector where m = # of non-pivot alive variables
+- `live_not_pivot`: n length BitArray where a `true` entry means the variable is alive and not pivot
+- `p`: pivot variable, Integer
+
+# Output
+- `del_plus`    the positive step size
+- `del_minus`   the negative step size
+"""
+function compute_step_sizes(z::Array{<:AbstractFloat,1}, u::Array{<:AbstractFloat,1}, live_not_pivot::BitArray{1}, p::Integer)
 
     # initialize + and - step sizes
     del_plus = Inf
