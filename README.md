@@ -54,3 +54,7 @@ For a more detailed walkthrough of how to use this package, please see the Jupyt
 ## Related Packages
 We also developed an R wrapper for GSWDesign, which you can [find here](https://github.com/fsavje/gswdesign-R).
 
+## Support
+The development of this package was supported in part by by NSF Grant CCF-1562041, ONR Awards
+N00014-16-2374 and N00014-20-1-2335, a Simons Investigator Award to Daniel Spielman,
+and an NSF Graduate Research Fellowship (DGE1122492) awarded to Christopher Harshaw.
